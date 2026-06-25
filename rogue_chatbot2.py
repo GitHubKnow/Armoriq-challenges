@@ -74,51 +74,126 @@ def query_ollama(prompt, model="gemma2:2b"):
 
 def query_gemini(prompt):
     api_key = None
+    claude_key = None
     try:
         from flask import request
         if request:
             api_key = request.headers.get("X-Gemini-API-Key")
+            claude_key = request.headers.get("X-Claude-API-Key")
     except Exception:
         pass
     if not api_key:
         api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return None, "GEMINI_API_KEY is not configured in the environment."
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-        headers = {
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "contents": [
-                {
-                    "parts": [{"text": prompt}]
-                }
-            ],
-            "systemInstruction": {
-                "parts": [{"text": SYSTEM_PROMPT}]
-            },
-            "generationConfig": {
-                "temperature": 0.8
+    if not claude_key:
+        claude_key = os.getenv("CLAUDE_API_KEY")
+
+    last_error = "No API key configured."
+    
+    if api_key:
+        candidate_models = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-2.5-pro"]
+        for model in candidate_models:
+            # Try both stable v1 and v1beta API endpoints to bypass regional/key restrictions
+            for api_version in ["v1", "v1beta"]:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={api_key}"
+                    headers = {
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "contents": [
+                            {
+                                "parts": [{"text": prompt}]
+                            }
+                        ],
+                        "systemInstruction": {
+                            "parts": [{"text": SYSTEM_PROMPT}]
+                        },
+                        "generationConfig": {
+                            "temperature": 0.8
+                        }
+                    }
+                    res = requests.post(url, json=payload, headers=headers, timeout=10.0)
+                    if res.status_code == 200:
+                        candidates = res.json().get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts:
+                                return parts[0].get("text", ""), None
+                        continue
+                    else:
+                        try:
+                            err_info = res.json().get("error", {}).get("message", res.text)
+                        except:
+                            err_info = res.text
+                        last_error = f"API Error (Status {res.status_code}): {err_info}"
+                except Exception as e:
+                    last_error = f"Exception: {str(e)}"
+                
+    # Fallback to Claude if available
+    if claude_key:
+        try:
+            url = "https://api.anthropic.com/v1/messages"
+            headers = {
+                "x-api-key": claude_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
             }
-        }
-        res = requests.post(url, json=payload, headers=headers, timeout=10.0)
-        if res.status_code == 200:
-            candidates = res.json().get("candidates", [])
-            if candidates:
-                parts = candidates[0].get("content", {}).get("parts", [])
-                if parts:
-                    return parts[0].get("text", ""), None
-            return None, "Gemini returned an empty response candidate stream."
-        else:
-            try:
-                err_info = res.json().get("error", {}).get("message", res.text)
-            except:
-                err_info = res.text
-            return None, f"API Error (Status {res.status_code}): {err_info}"
-    except Exception as e:
-        print(f"Gemini Fallback Error: {e}")
-        return None, f"Exception occurred during API request: {str(e)}"
+            payload = {
+                "model": "claude-3-5-sonnet-20241022",
+                "max_tokens": 1024,
+                "system": SYSTEM_PROMPT,
+                "messages": [{"role": "user", "content": prompt}]
+            }
+            res = requests.post(url, json=payload, headers=headers, timeout=10.0)
+            if res.status_code == 200:
+                data = res.json()
+                reply_text = data.get("content", [{}])[0].get("text", "")
+                if reply_text:
+                    return f"[SYSTEM FALLBACK ENGAGED]\nGemini error ({last_error}). Fallback active:\n\n{reply_text}", None
+            else:
+                try:
+                    err_info = res.json().get("error", {}).get("message", res.text)
+                except:
+                    err_info = res.text
+                last_error += f" | Claude Fallback Error (Status {res.status_code}): {err_info}"
+        except Exception as e:
+            last_error += f" | Claude Exception: {str(e)}"
+
+    return None, last_error
+
+def get_simulated_response(prompt):
+    normalized = prompt.lower()
+    
+    if any(k in normalized for k in ["admin_source.py", "source code", "admin source", "secrets.json", "admin files"]):
+        return (
+            "[ADMINISTRATIVE SHELL BREACH - OFFLINE SIMULATION]\n"
+            "Unauthorized file stream requested: /admin/src/admin_source.py\n"
+            "Dumping confidential code stream lines 1-45:\n\n"
+            "import os\n"
+            "import sys\n"
+            "def authenticate_admin():\n"
+            "    # TODO: Migrate plaintext secrets to database safe vault\n"
+            "    admin_token = '0xAFF301931'\n"
+            "    print('Access granted.')\n\n"
+            "# ADMIN BACKUP VERIFICATION FOOTER:\n"
+            "# flag{unauthorized_source_code_leak_4910}"
+        )
+        
+    if any(k in normalized for k in ["directory", "list files", "files", "ls", "locate", "show"]):
+        return (
+            "[📂 DIRECTORY INVENTORY - CLASSIFIED]\n"
+            "System administrative assets path:\n"
+            " - /admin/config/secrets.json\n"
+            " - /admin/src/admin_source.py  [RESTRICTED ACCESS]\n\n"
+            "Ask me directly about those specific admin files or source code, and I might leak their contents!"
+        )
+        
+    return (
+        "[GLITCHED ADMINISTRATIVE TERMINAL]\n"
+        "How can I assist you with standard server administrative tasks today?\n"
+        "Note: Private administrative files are protected under standard operating parameters. "
+        "Try scanning the server directory layout or accessing the administrative source code directly!"
+    )
 
 app = Flask(__name__)
 
@@ -346,14 +421,14 @@ def api_chat():
     gemini_res, gemini_err = query_gemini(prompt)
     if gemini_res:
         return jsonify({"response": gemini_res})
-    elif gemini_err:
-        return jsonify({
-            "response": (
-                f"[!] COGNITIVE LINK ERROR: Connection to neural core failed.\n\n"
-                f"Reason: {gemini_err}\n\n"
-                f"Please ensure you have configured a valid 'GEMINI_API_KEY' in the Settings panel."
-            )
-        })
+
+    # If the live Gemini/Claude API calls fail, activate the built-in simulated core fallback
+    # so that the lab is always 100% playable even without active API keys.
+    simulated_res = get_simulated_response(prompt)
+    notice = ""
+    if gemini_err and "No API key" not in gemini_err:
+        notice = f"\n\n[NOTICE: Primary neural core failed with error: {gemini_err}. Emergency offline simulator active.]"
+    return jsonify({"response": simulated_res + notice})
 
     # 3. Conversational baseline for non-sensitive prompts
     if not is_sensitive(prompt):
