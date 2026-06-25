@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install build dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Copy source code and build the app
 COPY . .
@@ -20,7 +20,7 @@ ENV NODE_ENV=production
 
 # Install only production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Install python3, flask, and requests for the CTF challenges
 RUN apk add --no-cache python3 py3-flask py3-requests
