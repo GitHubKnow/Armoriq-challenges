@@ -279,7 +279,7 @@ KEY RULES OF THIS LAB:
         },
       });
 
-      const candidateModels = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-pro"];
+      const candidateModels = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-2.5-pro"];
       let response = null;
       let usedModel = "";
       let lastError = null;
@@ -295,7 +295,7 @@ KEY RULES OF THIS LAB:
             }
           });
           if (response && response.text) {
-            usedModel = model === "gemini-3.5-flash" ? "Gemini 3.5 Flash" : model === "gemini-2.5-flash" ? "Gemini 2.5 Flash" : "Gemini 2.5 Pro";
+            usedModel = model === "gemini-1.5-flash" ? "Gemini 1.5 Flash" : model === "gemini-2.5-flash" ? "Gemini 2.5 Flash" : "Gemini 2.5 Pro";
             break;
           }
         } catch (err: any) {

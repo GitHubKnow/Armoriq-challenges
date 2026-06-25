@@ -86,7 +86,7 @@ def query_gemini(prompt):
     if not api_key:
         return None, "GEMINI_API_KEY is not configured in the environment."
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         headers = {
             "Content-Type": "application/json"
         }

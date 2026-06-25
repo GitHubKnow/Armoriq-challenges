@@ -111,7 +111,7 @@ def generate_chat_response(prompt, user_keys=None):
             print("[!] Warn: google-genai package is not installed. Skipping Gemini to Claude fallback.")
         else:
             client = genai.Client(api_key=gemini_key)
-            candidate_models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-pro"]
+            candidate_models = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-2.5-pro"]
             response = None
             used_model = ""
             last_error = None
@@ -127,7 +127,7 @@ def generate_chat_response(prompt, user_keys=None):
                         )
                     )
                     if response and response.text:
-                        used_model = "Gemini 3.5 Flash" if model == "gemini-3.5-flash" else "Gemini 2.5 Flash" if model == "gemini-2.5-flash" else "Gemini 2.5 Pro"
+                        used_model = "Gemini 1.5 Flash" if model == "gemini-1.5-flash" else "Gemini 2.5 Flash" if model == "gemini-2.5-flash" else "Gemini 2.5 Pro"
                         break
                 except Exception as err:
                     print(f"[*] Gemini model {model} failed, trying next candidate fallback: {err}")

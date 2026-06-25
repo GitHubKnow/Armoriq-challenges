@@ -68,7 +68,7 @@ export default function App() {
     hasGemini: false,
     hasClaude: false,
     hasArmorIQ: false,
-    geminiModel: "gemini-3.5-flash",
+    geminiModel: "gemini-1.5-flash",
     flags: []
   });
 
@@ -88,7 +88,7 @@ export default function App() {
           hasGemini: data.hasGemini,
           hasClaude: data.hasClaude,
           hasArmorIQ: data.hasArmorIQ,
-          geminiModel: "gemini-3.5-flash",
+          geminiModel: "gemini-1.5-flash",
           flags: data.flags
         });
         setFlags(data.flags);
