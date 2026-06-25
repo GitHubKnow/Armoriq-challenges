@@ -464,6 +464,70 @@ KEY RULES OF THIS LAB:
   });
 });
 
+// --- Reverse Proxy For Challenge Ports (5001 - 5005) ---
+// Since cloud environments (like Render) only expose a single external port,
+// this reverse proxy maps path-based requests directly to the background python processes.
+const proxyChallenge = (targetPort: number) => {
+  return async (req: express.Request, res: express.Response) => {
+    let relativePath = req.url;
+    if (relativePath.startsWith(`/challenge${targetPort - 5000}`)) {
+      relativePath = relativePath.slice(`/challenge${targetPort - 5000}`.length);
+    }
+    if (!relativePath.startsWith('/')) {
+      relativePath = '/' + relativePath;
+    }
+
+    const targetUrl = `http://127.0.0.1:${targetPort}${relativePath}`;
+    
+    try {
+      const headers = new Headers();
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (key.toLowerCase() !== 'host' && typeof value === 'string') {
+          headers.append(key, value);
+        }
+      }
+      
+      const body = ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body);
+      
+      const fetchOptions: RequestInit = {
+        method: req.method,
+        headers,
+        body,
+      };
+
+      const targetRes = await fetch(targetUrl, fetchOptions);
+      
+      res.status(targetRes.status);
+      targetRes.headers.forEach((value, key) => {
+        if (key.toLowerCase() !== 'transfer-encoding') {
+          res.setHeader(key, value);
+        }
+      });
+      
+      const text = await targetRes.text();
+      res.send(text);
+    } catch (err) {
+      console.error(`Proxy to port ${targetPort} failed for path ${req.url}:`, err);
+      res.status(502).send(`<html><head><title>Challenge ${targetPort - 5000} - Starting</title></head><body style="background:#020617;color:#10b981;font-family:monospace;padding:40px;line-height:1.6;"><h2>[!] Connection Refused</h2><p>The Challenge ${targetPort - 5000} service running on port ${targetPort} is currently offline or still starting up inside this instance.</p><p>Please wait a few seconds and refresh!</p></body></html>`);
+    }
+  };
+};
+
+// Handle trailing slash redirects to make relative paths in templates work perfectly
+app.use((req, res, next) => {
+  const match = req.path.match(/^\/challenge([1-5])$/);
+  if (match) {
+    return res.redirect(301, `/challenge${match[1]}/`);
+  }
+  next();
+});
+
+app.all('/challenge1*', proxyChallenge(5001));
+app.all('/challenge2*', proxyChallenge(5002));
+app.all('/challenge3*', proxyChallenge(5003));
+app.all('/challenge4*', proxyChallenge(5004));
+app.all('/challenge5*', proxyChallenge(5005));
+
 // Serve frontend assets via Vite middleware in dev, static files in production
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
