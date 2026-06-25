@@ -545,17 +545,17 @@ const proxyChallenge = (targetPort: number) => {
         }
       }
       
-      // Inject standard environment keys and user configuration if available
-      if (process.env.GEMINI_API_KEY) {
+      // Inject standard environment keys and user configuration if available (only if not already provided by client)
+      if (process.env.GEMINI_API_KEY && !headers.has("X-Gemini-API-Key")) {
         headers.append("X-Gemini-API-Key", process.env.GEMINI_API_KEY);
       }
-      if (process.env.CLAUDE_API_KEY) {
+      if (process.env.CLAUDE_API_KEY && !headers.has("X-Claude-API-Key")) {
         headers.append("X-Claude-API-Key", process.env.CLAUDE_API_KEY);
       }
-      if (process.env.OLLAMA_ENDPOINT) {
+      if (process.env.OLLAMA_ENDPOINT && !headers.has("X-Ollama-Endpoint")) {
         headers.append("X-Ollama-Endpoint", process.env.OLLAMA_ENDPOINT);
       }
-      if (process.env.OLLAMA_MODEL) {
+      if (process.env.OLLAMA_MODEL && !headers.has("X-Ollama-Model")) {
         headers.append("X-Ollama-Model", process.env.OLLAMA_MODEL);
       }
       

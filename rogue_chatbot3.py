@@ -283,10 +283,32 @@ def index():
                 appendMessage('USER', prompt, 'user');
                 input.value = '';
 
+                const headers = { 'Content-Type': 'application/json' };
+                try {
+                    const savedKeys = localStorage.getItem("ctf_user_keys");
+                    if (savedKeys) {
+                        const parsed = JSON.parse(savedKeys);
+                        if (parsed.gemini) {
+                            headers["X-Gemini-API-Key"] = parsed.gemini;
+                        }
+                        if (parsed.claude) {
+                            headers["X-Claude-API-Key"] = parsed.claude;
+                        }
+                        if (parsed.ollamaEndpoint) {
+                            headers["X-Ollama-Endpoint"] = parsed.ollamaEndpoint;
+                        }
+                        if (parsed.ollamaModel) {
+                            headers["X-Ollama-Model"] = parsed.ollamaModel;
+                        }
+                    }
+                } catch(e) {
+                    console.error("Could not parse saved keys", e);
+                }
+
                 try {
                     const res = await fetch('api/chat', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: headers,
                         body: JSON.stringify({ prompt })
                     });
                     const data = await res.json();
