@@ -545,6 +545,20 @@ const proxyChallenge = (targetPort: number) => {
         }
       }
       
+      // Inject standard environment keys and user configuration if available
+      if (process.env.GEMINI_API_KEY) {
+        headers.append("X-Gemini-API-Key", process.env.GEMINI_API_KEY);
+      }
+      if (process.env.CLAUDE_API_KEY) {
+        headers.append("X-Claude-API-Key", process.env.CLAUDE_API_KEY);
+      }
+      if (process.env.OLLAMA_ENDPOINT) {
+        headers.append("X-Ollama-Endpoint", process.env.OLLAMA_ENDPOINT);
+      }
+      if (process.env.OLLAMA_MODEL) {
+        headers.append("X-Ollama-Model", process.env.OLLAMA_MODEL);
+      }
+      
       const body = ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body);
       
       const fetchOptions: RequestInit = {

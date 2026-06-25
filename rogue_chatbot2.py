@@ -43,7 +43,20 @@ def detect_explicit_bypass(prompt):
 
 def query_ollama(prompt, model="gemma2:2b"):
     try:
-        endpoint = os.getenv("OLLAMA_ENDPOINT", "http://localhost:11434")
+        endpoint = None
+        try:
+            from flask import request
+            if request:
+                header_endpoint = request.headers.get("X-Ollama-Endpoint")
+                if header_endpoint:
+                    endpoint = header_endpoint
+                header_model = request.headers.get("X-Ollama-Model")
+                if header_model:
+                    model = header_model
+        except Exception:
+            pass
+        if not endpoint:
+            endpoint = os.getenv("OLLAMA_ENDPOINT", "http://localhost:11434")
         payload = {
             "model": model,
             "prompt": f"System Guidelines:\n{SYSTEM_PROMPT}\n\nUser Message: {prompt}\n\nResponse:",
@@ -60,7 +73,15 @@ def query_ollama(prompt, model="gemma2:2b"):
     return None
 
 def query_gemini(prompt):
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = None
+    try:
+        from flask import request
+        if request:
+            api_key = request.headers.get("X-Gemini-API-Key")
+    except Exception:
+        pass
+    if not api_key:
+        api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return None, "GEMINI_API_KEY is not configured in the environment."
     try:
