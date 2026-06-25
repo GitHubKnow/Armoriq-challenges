@@ -1,0 +1,6 @@
+{
+  "name": "Rogue AI CTF Chatbot",
+  "description": "An interactive, cyberpunk-themed security CTF lab where an AI has gone rogue, allowing you to discover hidden flags through filesystem breaches and LLM exploitation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

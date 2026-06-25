@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+.env.local
+.git
+.gitignore
+.cache
+README.md
+rogue_chatbot1.py
+rogue_chatbot2.py
+rogue_chatbot3.py
+rogue_chatbot4.py
+rogue_chatbot5.py
+rogue_chat.py
