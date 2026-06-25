@@ -592,6 +592,20 @@ export default function App() {
                         </p>
                       </div>
 
+                      {flag.launchPath && (
+                        <div className="mb-4">
+                          <a
+                            href={flag.launchPath}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 hover:border-emerald-400/60 rounded-lg text-xs text-emerald-300 hover:text-emerald-100 font-mono font-bold tracking-wider transition-all shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] w-full justify-center group"
+                          >
+                            LAUNCH LAB INTERFACE 🌐
+                            <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
+                          </a>
+                        </div>
+                      )}
+
                       {/* Hint container */}
                       <div className="border-t border-emerald-950 pt-3">
                         <details className="cursor-pointer group">

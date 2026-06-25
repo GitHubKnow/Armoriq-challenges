@@ -14,6 +14,7 @@ export interface FlagStatus {
   points: number;
   unlocked: boolean;
   hint: string;
+  launchPath?: string | null;
 }
 
 export interface APISettings {
